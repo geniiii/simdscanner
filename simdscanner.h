@@ -1,3 +1,5 @@
+// TODO(geni): Documentation, clean up, sweep for consistency, fuzzing...
+
 #ifndef SIMDSC_H
 #define SIMDSC_H
 
@@ -10,13 +12,13 @@
 #define SIMDSC_X86 1
 #else
 #error simdscanner only supports x86 architectures
-#endif // SIMDSC_X86
+#endif
 
 #if defined(__i686__) || defined(__i386__) || defined(_M_IX86)
 #define SIMDSC_I686 1
 #else
 #define SIMDSC_I686 0
-#endif // SIMDSC_I686
+#endif
 
 /*===========================================================================*/
 /* Compile-level SIMD capabilities                                           */
@@ -83,8 +85,8 @@
 #define SIMDSC_PUBLIC_API            extern
 #define SIMDSC_STATIC_ASSERT(e)      typedef char __SIMDSC_STATIC_ASSERT__[(e) ? 1 : -1]
 
-#define SIMDSC_EASY_MAX_PATTERN_SIZE 1024
-SIMDSC_STATIC_ASSERT((SIMDSC_EASY_MAX_PATTERN_SIZE & 31) == 0);
+#define SIMDSC_EASY_MAX_SIGNATURE_SIZE 1024
+SIMDSC_STATIC_ASSERT((SIMDSC_EASY_MAX_SIGNATURE_SIZE & 31) == 0);
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,11 +100,11 @@ typedef uint8_t  simdsc_u8;
 typedef uint16_t simdsc_u16;
 typedef uint32_t simdsc_u32;
 enum {
-    SIMDSC_RESULT_INVALID_PARAMETER = -3,
-    SIMDSC_RESULT_UNDERSIZED_BUFFER = -2,
-    SIMDSC_RESULT_MALFORMED_PATTERN = -1,
-    SIMDSC_RESULT_FAILED_TO_FIND    = 0,
-    SIMDSC_RESULT_SUCCESS           = 1,
+    SIMDSC_RESULT_INVALID_PARAMETER  = -3,
+    SIMDSC_RESULT_UNDERSIZED_BUFFER  = -2,
+    SIMDSC_RESULT_MALFORMED_SIGNATURE = -1,
+    SIMDSC_RESULT_FAILED_TO_FIND     = 0,
+    SIMDSC_RESULT_SUCCESS            = 1,
 };
 typedef int32_t simdsc_result;
 
@@ -126,7 +128,7 @@ typedef void* (*simdsc_alloc_fn)(void* ctx, simdsc_u64 size);
 /* Functions                                                                 */
 /*===========================================================================*/
 
-SIMDSC_PUBLIC_API simdsc_result simdsc_compile_pattern(const simdsc_string8 pattern, simdsc_u8* compiled_out, simdsc_u64 compiled_out_size, simdsc_u8* mask_out, simdsc_u64 mask_out_size, simdsc_u64* out_offset);
+SIMDSC_PUBLIC_API simdsc_result simdsc_compile_signature(const simdsc_string8 signature, simdsc_u8* compiled_out, simdsc_u64 compiled_out_size, simdsc_u8* mask_out, simdsc_u64 mask_out_size, simdsc_u64* out_offset);
 SIMDSC_PUBLIC_API simdsc_result simdsc_mask_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u8* pattern, simdsc_u64 pattern_size, simdsc_u64* out_offset);
 SIMDSC_PUBLIC_API simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset);
 
@@ -138,14 +140,14 @@ SIMDSC_PUBLIC_API simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data,
 SIMDSC_PUBLIC_API simdsc_result simdsc_sse2_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset);
 #endif
 
-SIMDSC_PUBLIC_API simdsc_result simdsc_easy_find(const simdsc_u8* data, simdsc_u64 data_size, simdsc_string8 pattern, simdsc_u64* out_offset);
+SIMDSC_PUBLIC_API simdsc_result simdsc_easy_find(const simdsc_u8* data, simdsc_u64 data_size, simdsc_string8 signature, simdsc_u64* out_offset);
 
-SIMDSC_PUBLIC_API simdsc_result simdsc_alloc_pattern(simdsc_string8 pattern, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size, simdsc_alloc_fn alloc_fn, void* alloc_ctx);
+SIMDSC_PUBLIC_API simdsc_result simdsc_alloc_signature(simdsc_string8 signature, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size, simdsc_alloc_fn alloc_fn, void* alloc_ctx);
 
 #if SIMDSC_DEFAULT_ALLOC
 SIMDSC_PUBLIC_API void* simdsc_default_alloc(void* ctx, simdsc_u64 size);
 SIMDSC_PUBLIC_API void simdsc_default_free(void* ptr);
-SIMDSC_PUBLIC_API simdsc_result simdsc_alloc_pattern_default(simdsc_string8 pattern, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size);
+SIMDSC_PUBLIC_API simdsc_result simdsc_alloc_signature_default(simdsc_string8 signature, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size);
 #endif
 
 SIMDSC_PUBLIC_API simdsc_string8 simdsc_string8_from_cstr(const char* cstr);
@@ -247,13 +249,13 @@ static simdsc_u8 simdsc_hexpair_to_u8(simdsc_u8* data) {
     return result;
 }
 
-simdsc_result simdsc_compile_pattern(const simdsc_string8 pattern, simdsc_u8* compiled_out, simdsc_u64 compiled_out_size, simdsc_u8* mask_out, simdsc_u64 mask_out_size, simdsc_u64* out_size) {
-    if (pattern.s == NULL || compiled_out == NULL || mask_out == NULL || out_size == NULL) {
+simdsc_result simdsc_compile_signature(const simdsc_string8 signature, simdsc_u8* compiled_out, simdsc_u64 compiled_out_size, simdsc_u8* mask_out, simdsc_u64 mask_out_size, simdsc_u64* out_size) {
+    if (signature.s == NULL || compiled_out == NULL || mask_out == NULL || out_size == NULL) {
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }
 
-    simdsc_u8* cur = pattern.s;
-    simdsc_u8* end = pattern.s + pattern.size;
+    simdsc_u8* cur = signature.s;
+    simdsc_u8* end = signature.s + signature.size;
 
     simdsc_u64 i = 0;
     while (cur != end) {
@@ -284,7 +286,7 @@ simdsc_result simdsc_compile_pattern(const simdsc_string8 pattern, simdsc_u8* co
         // NOTE(geni): Malformed pattern check
         if (cur + 1 >= end) {
             *out_size = 0;
-            return SIMDSC_RESULT_MALFORMED_PATTERN;
+            return SIMDSC_RESULT_MALFORMED_SIGNATURE;
         }
 
         // NOTE(geni): Handle bytes
@@ -618,16 +620,16 @@ static simdsc_u64 simdsc_round_up_32(simdsc_u64 size) {
     return (size + 31) & ~((simdsc_u64) 31);
 }
 
-simdsc_result simdsc_easy_find(const simdsc_u8* data, simdsc_u64 data_size, simdsc_string8 pattern, simdsc_u64* out_offset) {
-    if (data == NULL || pattern.s == NULL || out_offset == NULL) {
+simdsc_result simdsc_easy_find(const simdsc_u8* data, simdsc_u64 data_size, simdsc_string8 signature, simdsc_u64* out_offset) {
+    if (data == NULL || signature.s == NULL || out_offset == NULL) {
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }
 
-    simdsc_u8  compiled_buf[SIMDSC_EASY_MAX_PATTERN_SIZE];
-    simdsc_u8  mask_buf[SIMDSC_EASY_MAX_PATTERN_SIZE];
+    simdsc_u8  compiled_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE];
+    simdsc_u8  mask_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE];
     simdsc_u64 pattern_size;
 
-    simdsc_result res = simdsc_compile_pattern(pattern, compiled_buf, sizeof compiled_buf, mask_buf, sizeof mask_buf, &pattern_size);
+    simdsc_result res = simdsc_compile_signature(signature, compiled_buf, sizeof compiled_buf, mask_buf, sizeof mask_buf, &pattern_size);
     if (res != SIMDSC_RESULT_SUCCESS) {
         return res;
     }
@@ -635,12 +637,12 @@ simdsc_result simdsc_easy_find(const simdsc_u8* data, simdsc_u64 data_size, simd
     return simdsc_auto_pattern_match(data, data_size, mask_buf, sizeof mask_buf, compiled_buf, sizeof compiled_buf, pattern_size, out_offset);
 }
 
-simdsc_result simdsc_alloc_pattern(simdsc_string8 pattern, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size, simdsc_alloc_fn alloc_fn, void* alloc_ctx) {
-    if (pattern.s == NULL || compiled_out == NULL || mask_out == NULL || out_size == NULL || alloc_fn == NULL) {
+simdsc_result simdsc_alloc_signature(simdsc_string8 signature, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size, simdsc_alloc_fn alloc_fn, void* alloc_ctx) {
+    if (signature.s == NULL || compiled_out == NULL || mask_out == NULL || out_size == NULL || alloc_fn == NULL) {
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }
 
-    simdsc_u64 buf_size = simdsc_round_up_32(pattern.size / 2 + 1);
+    simdsc_u64 buf_size = simdsc_round_up_32(signature.size / 2 + 1);
     if (buf_size < 32) buf_size = 32;
 
     *compiled_out = (simdsc_u8*) alloc_fn(alloc_ctx, buf_size);
@@ -653,13 +655,13 @@ simdsc_result simdsc_alloc_pattern(simdsc_string8 pattern, simdsc_u8** compiled_
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }
 
-    simdsc_result res = simdsc_compile_pattern(pattern, *compiled_out, buf_size, *mask_out, buf_size, out_size);
+    simdsc_result res = simdsc_compile_signature(signature, *compiled_out, buf_size, *mask_out, buf_size, out_size);
     return res;
 }
 
 #ifdef SIMDSC_DEFAULT_ALLOC
-simdsc_result simdsc_alloc_pattern_default(simdsc_string8 pattern, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size) {
-    return simdsc_alloc_pattern(pattern, compiled_out, mask_out, out_size, simdsc_default_alloc, NULL);
+simdsc_result simdsc_alloc_signature_default(simdsc_string8 signature, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size) {
+    return simdsc_alloc_signature(signature, compiled_out, mask_out, out_size, simdsc_default_alloc, NULL);
 }
 #endif // SIMDSC_DEFAULT_ALLOC
 

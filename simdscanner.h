@@ -129,7 +129,7 @@ typedef void* (*simdsc_alloc_fn)(void* ctx, simdsc_u64 size);
 /*===========================================================================*/
 
 SIMDSC_PUBLIC_API simdsc_result simdsc_compile_signature(const simdsc_string8 signature, simdsc_u8* compiled_out, simdsc_u64 compiled_out_size, simdsc_u8* mask_out, simdsc_u64 mask_out_size, simdsc_u64* out_offset);
-SIMDSC_PUBLIC_API simdsc_result simdsc_mask_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u8* pattern, simdsc_u64 pattern_size, simdsc_u64* out_offset);
+SIMDSC_PUBLIC_API simdsc_result simdsc_scalar_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u8* pattern, simdsc_u64 pattern_size, simdsc_u64* out_offset);
 SIMDSC_PUBLIC_API simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset);
 
 #if SIMDSC_AVX2
@@ -301,7 +301,7 @@ simdsc_result simdsc_compile_signature(const simdsc_string8 signature, simdsc_u8
     return SIMDSC_RESULT_SUCCESS;
 }
 
-simdsc_result simdsc_mask_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u8* pattern, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
+simdsc_result simdsc_scalar_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u8* pattern, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
     if (data == NULL || mask == NULL || pattern == NULL || out_offset == NULL || pattern_size == 0) {
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }
@@ -395,7 +395,7 @@ simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 
     // NOTE(geni): Fall back to scalar method for last bytes
     if (i <= data_size - pattern_size) {
         simdsc_u64 offset;
-        if (simdsc_mask_pattern_match(data + i, data_size - i, mask, pattern, pattern_size, &offset) != SIMDSC_RESULT_FAILED_TO_FIND) {
+        if (simdsc_scalar_pattern_match(data + i, data_size - i, mask, pattern, pattern_size, &offset) != SIMDSC_RESULT_FAILED_TO_FIND) {
             *out_offset = i + offset;
             return SIMDSC_RESULT_SUCCESS;
         }
@@ -470,7 +470,7 @@ simdsc_result simdsc_sse2_pattern_match(const simdsc_u8* data, const simdsc_u64 
     // NOTE(geni): Fall back to scalar method for last bytes
     if (i <= data_size - pattern_size) {
         simdsc_u64 offset;
-        if (simdsc_mask_pattern_match(data + i, data_size - i, mask, pattern, pattern_size, &offset) != SIMDSC_RESULT_FAILED_TO_FIND) {
+        if (simdsc_scalar_pattern_match(data + i, data_size - i, mask, pattern, pattern_size, &offset) != SIMDSC_RESULT_FAILED_TO_FIND) {
             *out_offset = i + offset;
             return SIMDSC_RESULT_SUCCESS;
         }
@@ -596,7 +596,7 @@ simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 
     }
 #endif // SIMDSC_SSE2
 
-    return simdsc_mask_pattern_match(data, data_size, mask, pattern, pattern_size, out_offset);
+    return simdsc_scalar_pattern_match(data, data_size, mask, pattern, pattern_size, out_offset);
 }
 #endif // SIMDSC_RUNTIME_DISPATCH
 
@@ -610,7 +610,7 @@ simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 
 #else
     (void) mask_buf_size;
     (void) pattern_buf_size;
-    return simdsc_mask_pattern_match(data, data_size, mask, pattern, pattern_size, out_offset);
+    return simdsc_scalar_pattern_match(data, data_size, mask, pattern, pattern_size, out_offset);
 #endif // SIMDSC_AVX2 / SIMDSC_SSE2
 }
 

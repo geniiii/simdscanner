@@ -52,16 +52,32 @@
 #define SIMDSC_DEFAULT_ALLOC 0
 #endif
 
+#ifndef SIMDSC_EASY_MAX_SIGNATURE_SIZE
+#define SIMDSC_EASY_MAX_SIGNATURE_SIZE 1024
+#endif
+
+#ifndef SIMDSC_STATIC
+#define SIMDSC_STATIC 0
+#endif
+
 /*===========================================================================*/
-/* Validation/Error Checks                                                   */
+/* Utility macros                                                            */
+/*===========================================================================*/
+
+#define SIMDSC_STATIC_ASSERT(e) typedef char __SIMDSC_STATIC_ASSERT__[(e) ? 1 : -1]
+
+
+/*===========================================================================*/
+/* Compile-time validation                                                   */
 /*===========================================================================*/
 
 #if SIMDSC_RUNTIME_DISPATCH_THREAD_SAFE && (!defined(__GNUC__) && !defined(__clang__) && !defined(_MSC_VER))
 #error SIMDSC_RUNTIME_DISPATCH_THREAD_SAFE requires GCC, Clang, or MSVC
 #endif
+SIMDSC_STATIC_ASSERT((SIMDSC_EASY_MAX_SIGNATURE_SIZE & 31) == 0);
 
 /*===========================================================================*/
-/* System Includes                                                           */
+/* Includes                                                           */
 /*===========================================================================*/
 
 #ifdef SIMDSC_SYSTEM_HEADER
@@ -73,16 +89,6 @@
 #ifdef _MSC_VER
 #include <intrin.h>
 #endif
-
-/*===========================================================================*/
-/* Utility Macros                                                            */
-/*===========================================================================*/
-
-#define SIMDSC_PUBLIC_API              extern
-#define SIMDSC_STATIC_ASSERT(e)        typedef char __SIMDSC_STATIC_ASSERT__[(e) ? 1 : -1]
-
-#define SIMDSC_EASY_MAX_SIGNATURE_SIZE 1024
-SIMDSC_STATIC_ASSERT((SIMDSC_EASY_MAX_SIGNATURE_SIZE & 31) == 0);
 
 #ifdef __cplusplus
 extern "C" {
@@ -638,7 +644,7 @@ simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 
 
 #endif  // SIMDSC_RUNTIME_DISPATCH
 
-static simdsc_u64 simdsc_round_up_32(simdsc_u64 size) {
+static inline simdsc_u64 simdsc_round_up_32(simdsc_u64 size) {
     return (size + 31) & ~((simdsc_u64) 31);
 }
 

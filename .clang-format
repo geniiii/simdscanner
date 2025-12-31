@@ -1,0 +1,34 @@
+Language: Cpp
+BasedOnStyle: Chromium
+IndentWidth: 4
+UseTab: Never
+BinPackParameters: true
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: Always
+CommentPragmas: '.\/[\*(\/\/)]+(.+\n.+)+\*\/'
+ColumnLimit: 0
+AlignConsecutiveDeclarations: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveMacros: AcrossEmptyLines
+AlignEscapedNewlines: Right
+AlignArrayOfStructures: Right
+AlignConsecutiveBitFields: Consecutive
+AlignTrailingComments: true
+AlignAfterOpenBracket: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AlignOperands: true
+SpaceAfterCStyleCast: true
+SortIncludes: Never
+IncludeBlocks: Preserve
+StatementMacros:
+  - "Callbacks"
+  - "GLProc"
+  - "TokenType"
+  - "Xtal_HashMapDefine"
+  - "Xtal_HashMapDefineNamed"
+  - "Xtal_HashMapDeclare"
+  - "Xtal_HashMapDeclareNamed"
+  - "Texture"

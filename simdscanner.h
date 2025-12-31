@@ -66,6 +66,11 @@
 
 #define SIMDSC_STATIC_ASSERT(e) typedef char __SIMDSC_STATIC_ASSERT__[(e) ? 1 : -1]
 
+#if SIMDSC_STATIC
+#define SIMDSC_PUBLIC_API static
+#else
+#define SIMDSC_PUBLIC_API extern
+#endif
 
 /*===========================================================================*/
 /* Compile-time validation                                                   */

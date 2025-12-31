@@ -99,7 +99,11 @@ typedef uint64_t simdsc_u64;
 typedef uint8_t  simdsc_u8;
 typedef uint16_t simdsc_u16;
 typedef uint32_t simdsc_u32;
+typedef int32_t  simdsc_i32;
 enum {
+    SIMDSC_RESULT_INVALID_HEX_CHAR    = -7,
+    SIMDSC_RESULT_EMPTY_SIGNATURE     = -6,
+    SIMDSC_RESULT_UNALIGNED_BUFFER    = -5,
     SIMDSC_RESULT_ALLOC_FAILED        = -4,
     SIMDSC_RESULT_INVALID_PARAMETER   = -3,
     SIMDSC_RESULT_UNDERSIZED_BUFFER   = -2,
@@ -230,24 +234,22 @@ simdsc_string8 simdsc_string8_from_cstr(const char* str) {
     return result;
 }
 
-static simdsc_u8 simdsc_hexpair_to_u8(simdsc_u8* data) {
-    simdsc_u8 result = 0;
-    if (data[0] >= '0' && data[0] <= '9') {
-        result = (data[0] - '0') << 4;
-    } else if (data[0] >= 'A' && data[0] <= 'F') {
-        result = (data[0] - 'A' + 10) << 4;
-    } else if (data[0] >= 'a' && data[0] <= 'f') {
-        result = (data[0] - 'a' + 10) << 4;
-    }
+static inline simdsc_i32 simdsc_hex_char_to_nibble(simdsc_u8 c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
 
-    if (data[1] >= '0' && data[1] <= '9') {
-        result |= data[1] - '0';
-    } else if (data[1] >= 'A' && data[1] <= 'F') {
-        result |= data[1] - 'A' + 10;
-    } else if (data[1] >= 'a' && data[1] <= 'f') {
-        result |= data[1] - 'a' + 10;
+// NOTE(geni): Returns 0 on success, -1 on invalid hex character
+static inline simdsc_i32 simdsc_hexpair_to_u8(simdsc_u8* data, simdsc_u8* out) {
+    simdsc_i32 hi = simdsc_hex_char_to_nibble(data[0]);
+    simdsc_i32 lo = simdsc_hex_char_to_nibble(data[1]);
+    if (hi < 0 || lo < 0) {
+        return -1;
     }
-    return result;
+    *out = (simdsc_u8) ((hi << 4) | lo);
+    return 0;
 }
 
 simdsc_result simdsc_compile_signature(const simdsc_string8 signature, simdsc_u8* compiled_out, simdsc_u64 compiled_out_size, simdsc_u8* mask_out, simdsc_u64 mask_out_size, simdsc_u64* out_size) {
@@ -291,13 +293,24 @@ simdsc_result simdsc_compile_signature(const simdsc_string8 signature, simdsc_u8
         }
 
         // NOTE(geni): Handle bytes
-        simdsc_u8 byte  = simdsc_hexpair_to_u8(cur);
+        simdsc_u8 byte;
+        if (simdsc_hexpair_to_u8(cur, &byte) < 0) {
+            *out_size = 0;
+            return SIMDSC_RESULT_INVALID_HEX_CHAR;
+        }
         mask_out[i]     = 0xFF;
         compiled_out[i] = byte;
 
         cur += 2;
         ++i;
     }
+
+    // NOTE(geni): Empty signature check
+    if (i == 0) {
+        *out_size = 0;
+        return SIMDSC_RESULT_EMPTY_SIGNATURE;
+    }
+
     *out_size = i;
     return SIMDSC_RESULT_SUCCESS;
 }
@@ -340,7 +353,7 @@ simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 
     }
 
     if ((mask_buf_size & 31) != 0 || (pattern_buf_size & 31) != 0) {
-        return SIMDSC_RESULT_UNDERSIZED_BUFFER;
+        return SIMDSC_RESULT_UNALIGNED_BUFFER;
     }
 
     if (data_size < pattern_size) {
@@ -414,7 +427,7 @@ simdsc_result simdsc_sse2_pattern_match(const simdsc_u8* data, const simdsc_u64 
     }
 
     if ((mask_buf_size & 15) != 0 || (pattern_buf_size & 15) != 0) {
-        return SIMDSC_RESULT_UNDERSIZED_BUFFER;
+        return SIMDSC_RESULT_UNALIGNED_BUFFER;
     }
 
     if (data_size < pattern_size) {

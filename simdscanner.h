@@ -628,7 +628,7 @@ simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 
 #endif  // SIMDSC_AVX2 / SIMDSC_SSE2
 }
 
-#endif  // SIMDSC_RUNTIME_DISPATCH (else branch)
+#endif  // SIMDSC_RUNTIME_DISPATCH
 
 static simdsc_u64 simdsc_round_up_32(simdsc_u64 size) {
     return (size + 31) & ~((simdsc_u64) 31);

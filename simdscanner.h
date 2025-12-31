@@ -68,9 +68,6 @@
 #include SIMDSC_SYSTEM_HEADER
 #else
 #include <stdint.h>
-#include <string.h>
-#include <xmmintrin.h>
-#include <immintrin.h>
 #endif
 
 #ifdef _MSC_VER
@@ -81,7 +78,6 @@
 /* Utility Macros                                                            */
 /*===========================================================================*/
 
-#define SIMDSC_STRLEN(s)               ((simdsc_u32) strlen(s))
 #define SIMDSC_PUBLIC_API              extern
 #define SIMDSC_STATIC_ASSERT(e)        typedef char __SIMDSC_STATIC_ASSERT__[(e) ? 1 : -1]
 
@@ -162,6 +158,18 @@ SIMDSC_PUBLIC_API simdsc_string8 simdsc_string8_from_cstr(const char* cstr);
 /*===========================================================================*/
 
 #ifdef SIMDSC_IMPLEMENTATION
+
+#include <string.h>
+
+#if SIMDSC_SSE2
+#include <emmintrin.h>
+#endif
+
+#if SIMDSC_AVX2
+#include <immintrin.h>
+#endif
+
+#define SIMDSC_STRLEN(s) ((simdsc_u32) strlen(s))
 
 #ifdef SIMDSC_DEFAULT_ALLOC
 #include <stdlib.h>
@@ -640,7 +648,7 @@ simdsc_result simdsc_easy_find(const simdsc_u8* data, simdsc_u64 data_size, simd
     }
 
     simdsc_u8  compiled_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE] = {0};
-    simdsc_u8  mask_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE] = {0};
+    simdsc_u8  mask_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE]     = {0};
     simdsc_u64 pattern_size;
 
     simdsc_result res = simdsc_compile_signature(signature, compiled_buf, sizeof compiled_buf, mask_buf, sizeof mask_buf, &pattern_size);

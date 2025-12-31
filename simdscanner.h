@@ -671,11 +671,13 @@ simdsc_result simdsc_alloc_signature(simdsc_string8 signature, simdsc_u8** compi
     if (*compiled_out == NULL) {
         return SIMDSC_RESULT_ALLOC_FAILED;
     }
+    memset(*compiled_out, 0, buf_size);
 
     *mask_out = (simdsc_u8*) alloc_fn(alloc_ctx, buf_size);
     if (*mask_out == NULL) {
         return SIMDSC_RESULT_ALLOC_FAILED;
     }
+    memset(*mask_out, 0, buf_size);
 
     simdsc_result res = simdsc_compile_signature(signature, *compiled_out, buf_size, *mask_out, buf_size, out_size);
     return res;

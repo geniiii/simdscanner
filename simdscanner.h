@@ -639,8 +639,8 @@ simdsc_result simdsc_easy_find(const simdsc_u8* data, simdsc_u64 data_size, simd
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }
 
-    simdsc_u8  compiled_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE];
-    simdsc_u8  mask_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE];
+    simdsc_u8  compiled_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE] = {0};
+    simdsc_u8  mask_buf[SIMDSC_EASY_MAX_SIGNATURE_SIZE] = {0};
     simdsc_u64 pattern_size;
 
     simdsc_result res = simdsc_compile_signature(signature, compiled_buf, sizeof compiled_buf, mask_buf, sizeof mask_buf, &pattern_size);

@@ -2,7 +2,7 @@
 
 Fast signature scanner for x86-64 and x86 using SIMD instructions.
 
-See the accompanying blog post: https://geni.site/blog/fast-signature-scanning-with-simd-instructions
+See the accompanying blog post: https://geni.site/simd-signature-scanner
 
 > [!WARNING]
 > The public API is unstable and subject to change without notice.

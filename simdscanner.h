@@ -48,7 +48,7 @@
 #define SIMDSC_RUNTIME_DISPATCH_THREAD_SAFE 0
 #endif
 
-#ifndef SIMDSC_DEFAULT_ALLOC 
+#ifndef SIMDSC_DEFAULT_ALLOC
 #define SIMDSC_DEFAULT_ALLOC 0
 #endif
 
@@ -81,9 +81,9 @@
 /* Utility Macros                                                            */
 /*===========================================================================*/
 
-#define SIMDSC_STRLEN(s)             ((simdsc_u32) strlen(s))
-#define SIMDSC_PUBLIC_API            extern
-#define SIMDSC_STATIC_ASSERT(e)      typedef char __SIMDSC_STATIC_ASSERT__[(e) ? 1 : -1]
+#define SIMDSC_STRLEN(s)               ((simdsc_u32) strlen(s))
+#define SIMDSC_PUBLIC_API              extern
+#define SIMDSC_STATIC_ASSERT(e)        typedef char __SIMDSC_STATIC_ASSERT__[(e) ? 1 : -1]
 
 #define SIMDSC_EASY_MAX_SIGNATURE_SIZE 1024
 SIMDSC_STATIC_ASSERT((SIMDSC_EASY_MAX_SIGNATURE_SIZE & 31) == 0);
@@ -100,11 +100,12 @@ typedef uint8_t  simdsc_u8;
 typedef uint16_t simdsc_u16;
 typedef uint32_t simdsc_u32;
 enum {
-    SIMDSC_RESULT_INVALID_PARAMETER  = -3,
-    SIMDSC_RESULT_UNDERSIZED_BUFFER  = -2,
+    SIMDSC_RESULT_ALLOC_FAILED        = -4,
+    SIMDSC_RESULT_INVALID_PARAMETER   = -3,
+    SIMDSC_RESULT_UNDERSIZED_BUFFER   = -2,
     SIMDSC_RESULT_MALFORMED_SIGNATURE = -1,
-    SIMDSC_RESULT_FAILED_TO_FIND     = 0,
-    SIMDSC_RESULT_SUCCESS            = 1,
+    SIMDSC_RESULT_SUCCESS             = 0,
+    SIMDSC_RESULT_NOT_FOUND           = 1,
 };
 typedef int32_t simdsc_result;
 
@@ -145,8 +146,8 @@ SIMDSC_PUBLIC_API simdsc_result simdsc_easy_find(const simdsc_u8* data, simdsc_u
 SIMDSC_PUBLIC_API simdsc_result simdsc_alloc_signature(simdsc_string8 signature, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size, simdsc_alloc_fn alloc_fn, void* alloc_ctx);
 
 #if SIMDSC_DEFAULT_ALLOC
-SIMDSC_PUBLIC_API void* simdsc_default_alloc(void* ctx, simdsc_u64 size);
-SIMDSC_PUBLIC_API void simdsc_default_free(void* ptr);
+SIMDSC_PUBLIC_API void*         simdsc_default_alloc(void* ctx, simdsc_u64 size);
+SIMDSC_PUBLIC_API void          simdsc_default_free(void* ptr);
 SIMDSC_PUBLIC_API simdsc_result simdsc_alloc_signature_default(simdsc_string8 signature, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size);
 #endif
 
@@ -185,8 +186,8 @@ void* simdsc_default_alloc(void* ctx, simdsc_u64 size) {
 void simdsc_default_free(void* ptr) {
     free(ptr);
 }
-#endif // _MSC_VER
-#endif // SIMDSC_DEFAULT_ALLOC
+#endif  // _MSC_VER
+#endif  // SIMDSC_DEFAULT_ALLOC
 
 #if SIMDSC_RUNTIME_DISPATCH
 typedef struct simdsc_simd_support {
@@ -203,9 +204,9 @@ typedef struct simdsc_cpuid_regs {
     simdsc_u32 edx;
 } simdsc_cpuid_regs;
 SIMDSC_STATIC_ASSERT(sizeof(simdsc_cpuid_regs) == sizeof(int[4]));
-#endif // SIMDSC_X86
+#endif  // SIMDSC_X86
 
-#endif // SIMDSC_RUNTIME_DISPATCH
+#endif  // SIMDSC_RUNTIME_DISPATCH
 
 #if defined(_MSC_VER) && !defined(__clang__)
 static __inline uint32_t simdsc_ctz(uint32_t value) {
@@ -220,7 +221,7 @@ static __inline uint32_t simdsc_ctz(uint32_t value) {
 }
 #else
 #define simdsc_ctz __builtin_ctz
-#endif // _MSC_VER && !__clang__
+#endif  // _MSC_VER && !__clang__
 
 simdsc_string8 simdsc_string8_from_cstr(const char* str) {
     simdsc_string8 result;
@@ -307,7 +308,7 @@ simdsc_result simdsc_scalar_pattern_match(const simdsc_u8* data, const simdsc_u6
     }
 
     if (data_size < pattern_size) {
-        return SIMDSC_RESULT_FAILED_TO_FIND;
+        return SIMDSC_RESULT_NOT_FOUND;
     }
 
     for (simdsc_u64 i = 0; i <= data_size - pattern_size; ++i) {
@@ -329,7 +330,7 @@ simdsc_result simdsc_scalar_pattern_match(const simdsc_u8* data, const simdsc_u6
     }
 
     *out_offset = 0;
-    return SIMDSC_RESULT_FAILED_TO_FIND;
+    return SIMDSC_RESULT_NOT_FOUND;
 }
 
 #if SIMDSC_AVX2
@@ -343,7 +344,7 @@ simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 
     }
 
     if (data_size < pattern_size) {
-        return SIMDSC_RESULT_FAILED_TO_FIND;
+        return SIMDSC_RESULT_NOT_FOUND;
     }
 
     const __m256i first_pattern_byte = _mm256_set1_epi8(pattern[0] & mask[0]);
@@ -395,16 +396,16 @@ simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 
     // NOTE(geni): Fall back to scalar method for last bytes
     if (i <= data_size - pattern_size) {
         simdsc_u64 offset;
-        if (simdsc_scalar_pattern_match(data + i, data_size - i, mask, pattern, pattern_size, &offset) != SIMDSC_RESULT_FAILED_TO_FIND) {
+        if (simdsc_scalar_pattern_match(data + i, data_size - i, mask, pattern, pattern_size, &offset) != SIMDSC_RESULT_NOT_FOUND) {
             *out_offset = i + offset;
             return SIMDSC_RESULT_SUCCESS;
         }
     }
 
     *out_offset = 0;
-    return SIMDSC_RESULT_FAILED_TO_FIND;
+    return SIMDSC_RESULT_NOT_FOUND;
 }
-#endif // SIMDSC_AVX2
+#endif  // SIMDSC_AVX2
 
 #if SIMDSC_SSE2
 simdsc_result simdsc_sse2_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
@@ -417,7 +418,7 @@ simdsc_result simdsc_sse2_pattern_match(const simdsc_u8* data, const simdsc_u64 
     }
 
     if (data_size < pattern_size) {
-        return SIMDSC_RESULT_FAILED_TO_FIND;
+        return SIMDSC_RESULT_NOT_FOUND;
     }
 
     const __m128i first_pattern_byte = _mm_set1_epi8(pattern[0] & mask[0]);
@@ -470,16 +471,16 @@ simdsc_result simdsc_sse2_pattern_match(const simdsc_u8* data, const simdsc_u64 
     // NOTE(geni): Fall back to scalar method for last bytes
     if (i <= data_size - pattern_size) {
         simdsc_u64 offset;
-        if (simdsc_scalar_pattern_match(data + i, data_size - i, mask, pattern, pattern_size, &offset) != SIMDSC_RESULT_FAILED_TO_FIND) {
+        if (simdsc_scalar_pattern_match(data + i, data_size - i, mask, pattern, pattern_size, &offset) != SIMDSC_RESULT_NOT_FOUND) {
             *out_offset = i + offset;
             return SIMDSC_RESULT_SUCCESS;
         }
     }
 
     *out_offset = 0;
-    return SIMDSC_RESULT_FAILED_TO_FIND;
+    return SIMDSC_RESULT_NOT_FOUND;
 }
-#endif // SIMDSC_SSE2
+#endif  // SIMDSC_SSE2
 
 #if SIMDSC_RUNTIME_DISPATCH
 
@@ -506,10 +507,10 @@ static simdsc_simd_support simdsc_check_cpu_flags(void) {
     __asm__ __volatile__("cpuid"
                          : "=a"(regs_leaf1.eax), "=b"(regs_leaf1.ebx), "=c"(regs_leaf1.ecx), "=d"(regs_leaf1.edx)
                          : "a"(1), "c"(0));
-#endif // SIMDSC_I686 && __PIC__
-#endif // _MSC_VER
+#endif  // SIMDSC_I686 && __PIC__
+#endif  // _MSC_VER
     result.sse2 = (regs_leaf1.edx & 0x04000000) != 0;
-#endif // SIMDSC_SSE2
+#endif  // SIMDSC_SSE2
 
 #if SIMDSC_AVX2
     simdsc_cpuid_regs regs_leaf7 = {0};
@@ -520,7 +521,7 @@ static simdsc_simd_support simdsc_check_cpu_flags(void) {
     __asm__ __volatile__("cpuid"
                          : "=a"(regs_leaf7.eax), "=b"(regs_leaf7.ebx), "=c"(regs_leaf7.ecx), "=d"(regs_leaf7.edx)
                          : "a"(7), "c"(0));
-#endif // _MSC_VER
+#endif  // _MSC_VER
     result.avx2 = (regs_leaf7.ebx & 0x00000020) != 0;
 
     // NOTE(geni): Check if OS is sane
@@ -529,13 +530,13 @@ static simdsc_simd_support simdsc_check_cpu_flags(void) {
     xcr0 = (uint32_t) _xgetbv(0);
 #else
     __asm__("xgetbv" : "=a"(xcr0) : "c"(0) : "%edx");
-#endif // _MSC_VER
+#endif  // _MSC_VER
     result.avx2 &= (xcr0 & 6) == 6;
-#endif // SIMDSC_AVX2
+#endif  // SIMDSC_AVX2
 
     return result;
 }
-#endif // SIMDSC_X86
+#endif  // SIMDSC_X86
 
 simdsc_simd_support simdsc_cpu_capabilities(void) {
     static simdsc_simd_support info;
@@ -551,7 +552,7 @@ simdsc_simd_support simdsc_cpu_capabilities(void) {
     if (_InterlockedExchangeAdd((long volatile*) &initialized, 0)) {
         return info;
     }
-#endif // __GNUC__ || __clang__ / _MSC_VER
+#endif  // __GNUC__ || __clang__ / _MSC_VER
 
     info = simdsc_check_cpu_flags();
 
@@ -563,7 +564,7 @@ simdsc_simd_support simdsc_cpu_capabilities(void) {
     initialized = 1;
 #else
     initialized = 1;
-#endif // __GNUC__ || __clang__ / _MSC_VER
+#endif  // __GNUC__ || __clang__ / _MSC_VER
 
 #else
     static simdsc_u32 initialized = 0;
@@ -573,9 +574,9 @@ simdsc_simd_support simdsc_cpu_capabilities(void) {
 
 #if SIMDSC_X86
     info = simdsc_check_cpu_flags();
-#endif // SIMDSC_X86
+#endif  // SIMDSC_X86
     initialized = 1;
-#endif // SIMDSC_RUNTIME_DISPATCH_THREAD_SAFE
+#endif  // SIMDSC_RUNTIME_DISPATCH_THREAD_SAFE
 
     return info;
 }
@@ -588,17 +589,17 @@ simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 
     if (info.avx2) {
         return simdsc_avx2_pattern_match(data, data_size, mask, mask_buf_size, pattern, pattern_buf_size, pattern_size, out_offset);
     }
-#endif // SIMDSC_AVX2
+#endif  // SIMDSC_AVX2
 
 #if SIMDSC_SSE2
     if (info.sse2) {
         return simdsc_sse2_pattern_match(data, data_size, mask, mask_buf_size, pattern, pattern_buf_size, pattern_size, out_offset);
     }
-#endif // SIMDSC_SSE2
+#endif  // SIMDSC_SSE2
 
     return simdsc_scalar_pattern_match(data, data_size, mask, pattern, pattern_size, out_offset);
 }
-#endif // SIMDSC_RUNTIME_DISPATCH
+#endif  // SIMDSC_RUNTIME_DISPATCH
 
 #else
 
@@ -611,10 +612,10 @@ simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 
     (void) mask_buf_size;
     (void) pattern_buf_size;
     return simdsc_scalar_pattern_match(data, data_size, mask, pattern, pattern_size, out_offset);
-#endif // SIMDSC_AVX2 / SIMDSC_SSE2
+#endif  // SIMDSC_AVX2 / SIMDSC_SSE2
 }
 
-#endif // SIMDSC_RUNTIME_DISPATCH (else branch)
+#endif  // SIMDSC_RUNTIME_DISPATCH (else branch)
 
 static simdsc_u64 simdsc_round_up_32(simdsc_u64 size) {
     return (size + 31) & ~((simdsc_u64) 31);
@@ -647,12 +648,12 @@ simdsc_result simdsc_alloc_signature(simdsc_string8 signature, simdsc_u8** compi
 
     *compiled_out = (simdsc_u8*) alloc_fn(alloc_ctx, buf_size);
     if (*compiled_out == NULL) {
-        return SIMDSC_RESULT_INVALID_PARAMETER;
+        return SIMDSC_RESULT_ALLOC_FAILED;
     }
 
     *mask_out = (simdsc_u8*) alloc_fn(alloc_ctx, buf_size);
     if (*mask_out == NULL) {
-        return SIMDSC_RESULT_INVALID_PARAMETER;
+        return SIMDSC_RESULT_ALLOC_FAILED;
     }
 
     simdsc_result res = simdsc_compile_signature(signature, *compiled_out, buf_size, *mask_out, buf_size, out_size);
@@ -663,12 +664,12 @@ simdsc_result simdsc_alloc_signature(simdsc_string8 signature, simdsc_u8** compi
 simdsc_result simdsc_alloc_signature_default(simdsc_string8 signature, simdsc_u8** compiled_out, simdsc_u8** mask_out, simdsc_u64* out_size) {
     return simdsc_alloc_signature(signature, compiled_out, mask_out, out_size, simdsc_default_alloc, NULL);
 }
-#endif // SIMDSC_DEFAULT_ALLOC
+#endif  // SIMDSC_DEFAULT_ALLOC
 
-#endif // SIMDSC_IMPLEMENTATION
+#endif  // SIMDSC_IMPLEMENTATION
 
 #ifdef __cplusplus
 }
-#endif // __cplusplus
+#endif  // __cplusplus
 
-#endif // SIMDSC_H
+#endif  // SIMDSC_H

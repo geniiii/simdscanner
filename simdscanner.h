@@ -244,7 +244,7 @@ static __inline uint32_t simdsc_ctz(uint32_t value) {
 }
 #else
 #define simdsc_ctz __builtin_ctz
-#endif  // _MSC_VER && !__clang__
+#endif  // defined(_MSC_VER) && !defined(__clang__)
 
 simdsc_string8 simdsc_string8_from_cstr(const char* str) {
     simdsc_string8 result;
@@ -539,7 +539,7 @@ static simdsc_simd_support simdsc_check_cpu_flags(void) {
     __asm__ __volatile__("cpuid"
                          : "=a"(regs_leaf1.eax), "=b"(regs_leaf1.ebx), "=c"(regs_leaf1.ecx), "=d"(regs_leaf1.edx)
                          : "a"(1), "c"(0));
-#endif  // SIMDSC_I686 && __PIC__
+#endif  // SIMDSC_I686 && defined(__PIC__)
 #endif  // _MSC_VER
     result.sse2 = (regs_leaf1.edx & 0x04000000) != 0;
 #endif  // SIMDSC_SSE2
@@ -562,7 +562,7 @@ static simdsc_simd_support simdsc_check_cpu_flags(void) {
     xcr0 = (uint32_t) _xgetbv(0);
 #else
     __asm__("xgetbv" : "=a"(xcr0) : "c"(0) : "%edx");
-#endif  // _MSC_VER
+#endif  // defined(_MSC_VER)
     result.avx2 &= (xcr0 & 6) == 6;
 #endif  // SIMDSC_AVX2
 
@@ -584,7 +584,7 @@ simdsc_simd_support simdsc_cpu_capabilities(void) {
     if (_InterlockedExchangeAdd((long volatile*) &initialized, 0)) {
         return info;
     }
-#endif  // __GNUC__ || __clang__ / _MSC_VER
+#endif  // defined(__GNUC__) || defined(__clang__)
 
     info = simdsc_check_cpu_flags();
 
@@ -596,7 +596,7 @@ simdsc_simd_support simdsc_cpu_capabilities(void) {
     initialized = 1;
 #else
     initialized = 1;
-#endif  // __GNUC__ || __clang__ / _MSC_VER
+#endif  // defined(__GNUC__) || defined(__clang__)
 
 #else
     static simdsc_u32 initialized = 0;
@@ -644,7 +644,7 @@ simdsc_result simdsc_auto_pattern_match(const simdsc_u8* data, const simdsc_u64 
     (void) mask_buf_size;
     (void) pattern_buf_size;
     return simdsc_scalar_pattern_match(data, data_size, mask, pattern, pattern_size, out_offset);
-#endif  // SIMDSC_AVX2 / SIMDSC_SSE2
+#endif  // SIMDSC_AVX2
 }
 
 #endif  // SIMDSC_RUNTIME_DISPATCH

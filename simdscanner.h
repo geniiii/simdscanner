@@ -216,7 +216,7 @@ void simdsc_default_free(void* ptr) {
 #endif  // _MSC_VER
 #endif  // SIMDSC_DEFAULT_ALLOC
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 #define SIMDSC_TARGET(arch)
 #else
 #define SIMDSC_TARGET(arch) __attribute__((target(arch)))
@@ -376,7 +376,7 @@ simdsc_result simdsc_scalar_pattern_match(const simdsc_u8* data, const simdsc_u6
 }
 
 #if SIMDSC_AVX2
-SIMDSC_TARGET("avx2") simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
+SIMDSC_TARGET("avx2,bmi") simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
     if (data == NULL || mask == NULL || pattern == NULL || out_offset == NULL || pattern_size == 0) {
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }

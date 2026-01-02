@@ -24,16 +24,20 @@
 /* Compile-level SIMD capabilities                                           */
 /*===========================================================================*/
 
+#ifndef SIMDSC_AVX2
 #ifdef __AVX2__
 #define SIMDSC_AVX2 1
 #else
 #define SIMDSC_AVX2 0
 #endif
+#endif
 
+#ifndef SIMDSC_SSE2
 #if (defined(_M_AMD64) || defined(_M_X64)) || _M_IX86_FP == 2 || _M_IX86_FP == 1
 #define SIMDSC_SSE2 1
 #else
 #define SIMDSC_SSE2 0
+#endif
 #endif
 
 /*===========================================================================*/
@@ -212,6 +216,12 @@ void simdsc_default_free(void* ptr) {
 #endif  // _MSC_VER
 #endif  // SIMDSC_DEFAULT_ALLOC
 
+#ifdef _MSC_VER
+#define SIMDSC_TARGET(arch)
+#else
+#define SIMDSC_TARGET(arch) __attribute__((target(arch)))
+#endif
+
 #if SIMDSC_RUNTIME_DISPATCH
 typedef struct simdsc_simd_support {
     simdsc_u32 sse2;
@@ -366,7 +376,7 @@ simdsc_result simdsc_scalar_pattern_match(const simdsc_u8* data, const simdsc_u6
 }
 
 #if SIMDSC_AVX2
-simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
+SIMDSC_TARGET("avx2") simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
     if (data == NULL || mask == NULL || pattern == NULL || out_offset == NULL || pattern_size == 0) {
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }
@@ -440,7 +450,7 @@ simdsc_result simdsc_avx2_pattern_match(const simdsc_u8* data, const simdsc_u64 
 #endif  // SIMDSC_AVX2
 
 #if SIMDSC_SSE2
-simdsc_result simdsc_sse2_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
+SIMDSC_TARGET("sse2") simdsc_result simdsc_sse2_pattern_match(const simdsc_u8* data, const simdsc_u64 data_size, simdsc_u8* mask, simdsc_u64 mask_buf_size, simdsc_u8* pattern, simdsc_u64 pattern_buf_size, simdsc_u64 pattern_size, simdsc_u64* out_offset) {
     if (data == NULL || mask == NULL || pattern == NULL || out_offset == NULL || pattern_size == 0) {
         return SIMDSC_RESULT_INVALID_PARAMETER;
     }

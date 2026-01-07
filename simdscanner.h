@@ -168,6 +168,14 @@ SIMDSC_PUBLIC_API simdsc_result simdsc_alloc_signature_default(simdsc_string8 si
 
 SIMDSC_PUBLIC_API simdsc_string8 simdsc_string8_from_cstr(const char* cstr);
 
+#if SIMDSC_RUNTIME_DISPATCH
+typedef struct simdsc_simd_support {
+    simdsc_u32 sse2;
+    simdsc_u32 avx2;
+} simdsc_simd_support;
+SIMDSC_PUBLIC_API simdsc_simd_support simdsc_cpu_capabilities(void);
+#endif
+
 /*===========================================================================*/
 /* Implementation                                                            */
 /*===========================================================================*/
@@ -227,11 +235,6 @@ void simdsc_default_free(void* ptr) {
 #endif
 
 #if SIMDSC_RUNTIME_DISPATCH
-typedef struct simdsc_simd_support {
-    simdsc_u32 sse2;
-    simdsc_u32 avx2;
-} simdsc_simd_support;
-simdsc_simd_support simdsc_cpu_capabilities(void);
 
 #if SIMDSC_X86
 typedef struct simdsc_cpuid_regs {

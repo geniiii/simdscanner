@@ -204,10 +204,14 @@ void simdsc_default_free(void* ptr) {
 #else
 void* simdsc_default_alloc(void* ctx, simdsc_u64 size) {
     (void) ctx;
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) || (defined(__cplusplus) && __cplusplus >= 201703L)
     void* ptr = aligned_alloc(32, size);
     if (ptr == NULL) {
         ptr = malloc(size);
     }
+#else
+    void* ptr = malloc(size);
+#endif
     return ptr;
 }
 void simdsc_default_free(void* ptr) {
